@@ -6,8 +6,10 @@ before that gameweek, then scored on it, as it would be in real use.
 Settings are chosen on one season and then checked on the next, so the
 final numbers aren't flattered by the tuning itself.
 
-python tune.py                  # with Understat
-python tune.py --no-understat   # FPL data only (faster)
+poetry run python tune.py                  # with Understat
+poetry run python tune.py --no-understat   # FPL data only (faster)
+poetry run python tune.py --no-odds        # without betting odds
+poetry run python tune.py --odds-only      # just: does adding odds help?
 """
 import argparse
 import time
@@ -79,12 +81,20 @@ def baseline(hist, season):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--no-understat", action="store_true")
-    if ap.parse_args().no_understat:
+    ap.add_argument("--no-odds", action="store_true")
+    ap.add_argument("--odds-only", action="store_true",
+                    help="skip tuning; compare CONFIG with and without odds")
+    args = ap.parse_args()
+    if args.no_understat:
         fm.USE_UNDERSTAT = False
+    if args.no_odds:
+        fm.USE_ODDS = False
 
     seasons = [s for s in fm.TRAIN_SEASONS if s <= TEST_SEASON]
     hist = fm.load_history(seasons)
     results = []
+    if args.odds_only:
+        return odds_check(hist, fm.CONFIG, results)
     original = {**fm.CONFIG, "form": "rolling", "window": 5,
                 "carry_over": False, "sample_halflife": None,
                 "per_position": False, "learning_rate": 0.05,
@@ -135,6 +145,10 @@ def main():
     run(hist, flipped, TEST_SEASON,
         "tuned, but " + ("shared model" if cfg["per_position"]
                          else "one model per position"), results)
+    if fm.USE_ODDS:
+        fm.USE_ODDS = False
+        run(hist, cfg, TEST_SEASON, "tuned, but without odds", results)
+        fm.USE_ODDS = True
     b = baseline(hist, TEST_SEASON)
     results.append({"season": TEST_SEASON, "config": "baseline: last-5 average", **b})
 
@@ -145,6 +159,24 @@ def main():
     res.to_csv("tuning_results.csv", index=False)
     print("\nBest settings, to paste into CONFIG in fpl_model.py:")
     print(cfg)
+
+
+def odds_check(hist, cfg, results):
+    """Same settings, with and without the odds inputs, on both seasons.
+    Nothing is tuned, so both seasons are fair tests."""
+    if not fm.USE_ODDS:
+        raise SystemExit("--odds-only needs the odds inputs; drop --no-odds")
+    for season in (TUNE_SEASON, TEST_SEASON):
+        print(f"Odds check ({season})")
+        fm.USE_ODDS = False
+        run(hist, cfg, season, "CONFIG without odds", results)
+        fm.USE_ODDS = True
+        run(hist, cfg, season, "CONFIG with odds", results)
+    res = pd.DataFrame(results).round(3)
+    print("\nErrors (points per player per match; regulars = 60+ mins avg "
+          "over previous 3)")
+    print(res.to_string(index=False))
+    res.to_csv("tuning_results_odds.csv", index=False)
 
 
 if __name__ == "__main__":
