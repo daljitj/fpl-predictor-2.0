@@ -1,0 +1,6 @@
+.venv/
+__pycache__/
+fpl_api_cache/
+understat_cache/
+tuning_results.csv
+output/

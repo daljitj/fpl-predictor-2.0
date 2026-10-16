@@ -1,0 +1,10 @@
+.venv/
+__pycache__/
+fpl_api_cache/
+understat_cache/
+tuning_results.csv
+odds_cache/
+tuning_results_odds.csv
+.idea/
+football_data_E0_*.csv
+*.pdf

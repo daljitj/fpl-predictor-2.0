@@ -1,0 +1,66 @@
+[project]
+name = "fpl-model"
+version = "0.1.0"
+description = "Predict FPL points from free data and pick a squad within the rules"
+requires-python = ">=3.11,<4.0"
+dependencies = [
+    "pandas>=2.1",
+    "numpy>=1.26",
+    "scikit-learn>=1.4",
+    "scipy>=1.11",
+    "requests>=2.31",
+]
+
+[tool.poetry]
+# scripts are run directly, so Poetry only manages the environment
+package-mode = false
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[dependency-groups]
+dev = [
+    "poethepoet (>=0.49.0,<0.50.0)"
+]
+
+# ---------------------------------------------------------------- commands
+# Run with:  poetry run poe <task>     List them:  poetry run poe
+[tool.poe.env]
+FPL_TEAM_ID = "6645275"   # replace with your FPL team ID
+
+[tool.poe.tasks.weekly]
+help = "Before each deadline: score last gameweek, then suggest transfers"
+sequence = ["track", "transfers"]
+
+[tool.poe.tasks.transfers]
+help = "Suggest transfers and a line-up for your team"
+cmd = "python fpl_model.py --team-id ${FPL_TEAM_ID}"
+
+[tool.poe.tasks.track]
+help = "Compare saved forecasts and suggestions with actual points"
+cmd = "python track.py --team-id ${FPL_TEAM_ID}"
+
+[tool.poe.tasks.wildcard]
+help = "Best squad from scratch within £100.0m"
+cmd = "python fpl_model.py"
+
+[tool.poe.tasks.tune]
+help = "Walk-forward tuning (every 4-6 weeks); paste the result into CONFIG"
+cmd = "python tune.py"
+
+[tool.poe.tasks.quick]
+help = "Transfer suggestions without Understat (if Understat is down)"
+cmd = "python fpl_model.py --team-id ${FPL_TEAM_ID} --no-understat"
+
+[tool.poe.tasks.no-odds]
+help = "Transfer suggestions without betting odds (if football-data.co.uk is down)"
+cmd = "python fpl_model.py --team-id ${FPL_TEAM_ID} --no-odds"
+
+[tool.poe.tasks.odds-check]
+help = "Walk-forward test: current CONFIG with and without betting odds"
+cmd = "python tune.py --odds-only"
+
+[tool.poe.tasks.refresh]
+cmd = "python -c \"import shutil; [shutil.rmtree(d, ignore_errors=True) for d in ('fpl_api_cache', 'odds_cache')]\""
+help = "Delete cached FPL data and odds so the next run downloads them fresh"
