@@ -44,10 +44,21 @@ def _get(path, cache_file, refresh=False):
     time.sleep(DELAY)
     r = _session.get(URL + path, headers=HEADERS, timeout=30)
     r.raise_for_status()
-    data = r.json()
+    try:
+        data = r.json()
+    except ValueError:
+        # Understat sometimes answers with a web page instead of data
+        # (an outage, a block or a site change)
+        raise UnderstatError(f"{path} returned a page, not data "
+                             f"(status {r.status_code}, starts "
+                             f"{r.text[:60]!r})") from None
     cache_file.parent.mkdir(parents=True, exist_ok=True)
     cache_file.write_text(json.dumps(data), encoding="utf-8")
     return data
+
+
+class UnderstatError(Exception):
+    pass
 
 
 def fpl_to_understat_season(season):
@@ -61,14 +72,33 @@ def load_understat_season(season):
     path, name = f"/getLeagueData/EPL/{year}", f"league_EPL_{year}.json"
     league = _get(path, name)
     if not all(m.get("isResult") for m in league["dates"]):
-        league = _get(path, name, refresh=True)  # season in progress
+        try:
+            league = _get(path, name, refresh=True)  # season in progress
+        except (UnderstatError, requests.RequestException) as e:
+            # carry on with the saved copy: recent matches just go
+            # without Understat inputs, which the model handles
+            print(f"Understat unavailable ({e}); using saved data, so "
+                  "the latest matches have no Understat inputs")
+            return _from_league(league, offline=True)
+    return _from_league(league)
+
+
+def _from_league(league, offline=False):
     played = [m for m in league["dates"] if m.get("isResult")]
 
     players, shots = [], []
     for m in played:
         gid = int(m["id"])
         date = pd.to_datetime(m["datetime"]).normalize()
-        data = _get(f"/getMatchData/{gid}", f"match_{gid}.json")
+        cached = (CACHE_DIR / f"match_{gid}.json").exists()
+        if offline and not cached:
+            continue
+        try:
+            data = _get(f"/getMatchData/{gid}", f"match_{gid}.json")
+        except (UnderstatError, requests.RequestException) as e:
+            print(f"Understat: skipping match {gid} ({e})")
+            offline = True   # don't keep trying a site that's down
+            continue
         team_name = {"h": m["h"]["title"], "a": m["a"]["title"]}
 
         for side, roster in data["rosters"].items():
