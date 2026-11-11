@@ -4,14 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="a3d08e0b-a7e7-4484-8447-bc3cd1807166" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/output/tracking_odds_2026-27.csv" beforeDir="false" afterPath="$PROJECT_DIR$/output/tracking_odds_2026-27.csv" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/output/tracking_players_2026-27.csv" beforeDir="false" afterPath="$PROJECT_DIR$/output/tracking_players_2026-27.csv" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/output/tracking_ranges_2026-27.csv" beforeDir="false" afterPath="$PROJECT_DIR$/output/tracking_ranges_2026-27.csv" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/output/tracking_summary_2026-27.csv" beforeDir="false" afterPath="$PROJECT_DIR$/output/tracking_summary_2026-27.csv" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/output/tracking_teams_2026-27.csv" beforeDir="false" afterPath="$PROJECT_DIR$/output/tracking_teams_2026-27.csv" afterDir="false" />
-    </list>
+    <list default="true" id="a3d08e0b-a7e7-4484-8447-bc3cd1807166" name="Changes" comment="" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
