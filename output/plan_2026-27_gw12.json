@@ -1,7 +1,7 @@
 {
   "season": "2026-27",
   "gameweek": 12,
-  "made_at": "2026-11-25T19:44:54.888513+00:00",
+  "made_at": "2026-11-25T20:07:40.488638+00:00",
   "deadline": "2026-11-27T18:30:00Z",
   "mode": "transfers",
   "squad": [
@@ -14,8 +14,8 @@
     154,
     250,
     286,
+    316,
     334,
-    346,
     372,
     379,
     411,
@@ -25,20 +25,20 @@
     {
       "gameweek": 12,
       "start": [
+        40,
         112,
         115,
         124,
         154,
         250,
         334,
-        346,
         372,
         379,
         411,
         566
       ],
       "captain": 334,
-      "predicted": 52.85
+      "predicted": 51.57
     },
     {
       "gameweek": 13,
@@ -62,19 +62,19 @@
       "gameweek": 14,
       "start": [
         31,
+        40,
         115,
         124,
         154,
         250,
         334,
-        346,
         372,
         379,
         411,
         566
       ],
       "captain": 411,
-      "predicted": 55.5
+      "predicted": 54.5
     }
   ],
   "inputs": {
@@ -83,7 +83,7 @@
     "odds": true
   },
   "bank": 19,
-  "free_transfers": 2,
+  "free_transfers": 1,
   "sell_prices": {
     "1": 61,
     "566": 50,
@@ -102,12 +102,10 @@
     "286": 52
   },
   "transfers_out": [
-    316,
     87
   ],
   "transfers_in": [
-    334,
-    346
+    334
   ],
   "hits": 0,
   "options": [
@@ -117,7 +115,33 @@
       "gain": 0.0,
       "hits": 0,
       "out": [],
-      "in": []
+      "in": [],
+      "lineup": {
+        "xi": "Leno | De Cuyper, Silva, Van Hecke, Konsa | Palmer (C), Gro\u00df (VC), Mac Allister, Rogers | Isak, Haaland",
+        "bench": "Raya, Belloumi, Ajer, Emersonn",
+        "captain": 154,
+        "vice": 124,
+        "start": [
+          31,
+          40,
+          112,
+          115,
+          124,
+          154,
+          250,
+          372,
+          379,
+          411,
+          566
+        ],
+        "bench_order": [
+          1,
+          286,
+          87,
+          316
+        ],
+        "points": 49.4
+      }
     },
     {
       "transfers": 1,
@@ -129,13 +153,39 @@
       ],
       "in": [
         334
-      ]
+      ],
+      "lineup": {
+        "xi": "Leno | Muharemovi\u0107 (C), De Cuyper, Silva, Van Hecke | Palmer (VC), Gro\u00df, Mac Allister, Rogers | Isak, Haaland",
+        "bench": "Raya, Konsa, Belloumi, Emersonn",
+        "captain": 334,
+        "vice": 154,
+        "start": [
+          40,
+          112,
+          115,
+          124,
+          154,
+          250,
+          334,
+          372,
+          379,
+          411,
+          566
+        ],
+        "bench_order": [
+          1,
+          31,
+          286,
+          316
+        ],
+        "points": 51.6
+      }
     },
     {
       "transfers": 2,
-      "net": 165.1,
-      "gain": 6.36,
-      "hits": 0,
+      "net": 161.1,
+      "gain": 2.36,
+      "hits": 4,
       "out": [
         316,
         87
@@ -143,13 +193,39 @@
       "in": [
         334,
         346
-      ]
+      ],
+      "lineup": {
+        "xi": "Leno | Muharemovi\u0107 (C), De Cuyper, Silva, Van Hecke | Palmer, Gro\u00df, Mac Allister | Calvert-Lewin (VC), Isak, Haaland",
+        "bench": "Raya, Rogers, Konsa, Belloumi",
+        "captain": 334,
+        "vice": 346,
+        "start": [
+          112,
+          115,
+          124,
+          154,
+          250,
+          334,
+          346,
+          372,
+          379,
+          411,
+          566
+        ],
+        "bench_order": [
+          1,
+          40,
+          31,
+          286
+        ],
+        "points": 52.8
+      }
     },
     {
       "transfers": 3,
-      "net": 164.89,
-      "gain": 6.15,
-      "hits": 4,
+      "net": 160.89,
+      "gain": 2.15,
+      "hits": 8,
       "out": [
         1,
         112,
@@ -159,7 +235,33 @@
         109,
         598,
         426
-      ]
+      ],
+      "lineup": {
+        "xi": "Verbruggen | Elvedi (VC), De Cuyper, Silva, Konsa | B.Fernandes (C), Palmer, Gro\u00df, Mac Allister | Isak, Haaland",
+        "bench": "Leno, Belloumi, Ajer, Emersonn",
+        "captain": 426,
+        "vice": 598,
+        "start": [
+          31,
+          109,
+          115,
+          124,
+          154,
+          372,
+          379,
+          411,
+          426,
+          566,
+          598
+        ],
+        "bench_order": [
+          250,
+          286,
+          87,
+          316
+        ],
+        "points": 54.0
+      }
     }
   ]
 }
