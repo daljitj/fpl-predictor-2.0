@@ -455,12 +455,24 @@ def save_plan(result, gw_cols, mode, team=None, options=None):
                          "captain": int(lu["captain"]),
                          "predicted": round(float(lu["points"]), 2)}
                         for lu in result["lineups"]]}
+    import understat_loader
+    plan["inputs"] = {"understat": USE_UNDERSTAT,
+                      "understat_stale": understat_loader.STALE,
+                      "odds": USE_ODDS}
     if team is not None:
+        plan["bank"] = int(team["bank"])
+        plan["free_transfers"] = int(team["free_transfers"])
+        plan["sell_prices"] = {str(e): int(team["sell"][e]) for e in team["squad"]}
         plan["transfers_out"] = [int(e) for e in team["squad"] if e not in squad]
         plan["transfers_in"] = [e for e in squad if e not in team["squad"]]
         plan["hits"] = int(result["hits"])
         plan["options"] = [{"transfers": r["k"], "net": round(r["net"], 2),
-                            "gain": round(r["gain"], 2)} for r in options]
+                            "gain": round(r["gain"], 2), "hits": int(r["hits"]),
+                            "out": [int(e) for e in team["squad"]
+                                    if e not in set(r["squad"]["element"])],
+                            "in": [int(e) for e in r["squad"]["element"]
+                                   if e not in team["squad"]]}
+                           for r in options]
     f = OUTPUT / f"plan_{CURRENT}_gw{info['gameweek']}.json"
     f.write_text(json.dumps(plan, indent=2), encoding="utf-8")
 

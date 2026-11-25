@@ -50,3 +50,18 @@ poetry run poe tune         # walk-forward tuning, every 4 to 6 weeks
 ```
 
 Outputs go to `output/` (not committed). The scripts never change your FPL team; make transfers in the FPL app yourself.
+
+## Phone notifications
+
+A GitHub Actions workflow (`.github/workflows/weekly.yml`) checks twice a day (08:00 and 17:00 UTC). Between 3 and 20 hours before each deadline it scores last gameweek, runs the model for your team, sends the suggestions to your phone with [ntfy](https://ntfy.sh), and commits `output/`. If the run fails, you get a "run failed" notification instead.
+
+Setup, once:
+
+1. Install the ntfy app and subscribe to your private topic name (treat it like a password: anyone with the name can read the messages).
+2. In this repo: Settings > Secrets and variables > Actions > New repository secret, name `NTFY_TOPIC`, value your topic name.
+3. Settings > Actions > General > Workflow permissions: "Read and write permissions".
+4. Test: Actions tab > "Weekly FPL suggestions" > Run workflow, tick "force".
+
+Because the workflow commits `output/`, run `git pull` before committing locally.
+
+To check the message without sending: `poetry run python notify.py --dry-run`. To see whether a run is due: `poetry run python due.py`.

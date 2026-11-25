@@ -20,6 +20,8 @@ API = "https://fantasy.premierleague.com/api"
 CACHE_DIR = Path("fpl_api_cache")
 MAX_AGE_HOURS = 6
 DELAY = 0.2  # seconds between uncached player requests
+RETRIES = 3       # extra attempts when FPL answers 5xx
+RETRY_WAIT = 30   # seconds between them
 POSITIONS = {1: "GK", 2: "DEF", 3: "MID", 4: "FWD"}
 
 _session = requests.Session()
@@ -30,8 +32,20 @@ def _get_json(path, cache_name, max_age_hours=MAX_AGE_HOURS):
     f = CACHE_DIR / cache_name
     if f.exists() and time.time() - f.stat().st_mtime < max_age_hours * 3600:
         return json.loads(f.read_text(encoding="utf-8"))
-    time.sleep(DELAY)
-    r = _session.get(f"{API}/{path}", timeout=30)
+    for attempt in range(RETRIES + 1):
+        time.sleep(DELAY)
+        r = _session.get(f"{API}/{path}", timeout=30)
+        if r.status_code < 500 or attempt == RETRIES:
+            break
+        # 503 usually means FPL is updating (around deadlines and after
+        # matches); wait and try again
+        print(f"  FPL API busy ({r.status_code}); retrying in "
+              f"{RETRY_WAIT}s ({attempt + 1}/{RETRIES})", flush=True)
+        time.sleep(RETRY_WAIT)
+    if r.status_code >= 500:
+        raise SystemExit(f"The FPL API is unavailable ({r.status_code} for "
+                         f"{path}). FPL is probably updating; try again in "
+                         "an hour.")
     r.raise_for_status()
     data = r.json()
     f.parent.mkdir(parents=True, exist_ok=True)

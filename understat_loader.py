@@ -61,6 +61,9 @@ class UnderstatError(Exception):
     pass
 
 
+STALE = False   # set when a run fell back to saved Understat data
+
+
 def fpl_to_understat_season(season):
     """'2025-26' -> 2025 (Understat labels a season by its first year)."""
     return int(season[:4])
@@ -68,6 +71,7 @@ def fpl_to_understat_season(season):
 
 def load_understat_season(season):
     """Return (player_match, shots) DataFrames for one EPL season."""
+    global STALE
     year = fpl_to_understat_season(season)
     path, name = f"/getLeagueData/EPL/{year}", f"league_EPL_{year}.json"
     league = _get(path, name)
@@ -79,6 +83,7 @@ def load_understat_season(season):
             # without Understat inputs, which the model handles
             print(f"Understat unavailable ({e}); using saved data, so "
                   "the latest matches have no Understat inputs")
+            STALE = True
             return _from_league(league, offline=True)
     return _from_league(league)
 
