@@ -53,14 +53,15 @@ jobs:
       - name: Install dependencies
         run: poetry install --no-interaction
 
-      - name: Restore Understat and odds caches
+      # understat_cache/ is committed to the repo (Understat often refuses
+      # automated requests, so GitHub starts from the saved history); new
+      # matches are committed back in the last step. Odds stay in the cache.
+      - name: Restore odds cache
         uses: actions/cache@v4
         with:
-          path: |
-            understat_cache
-            odds_cache
-          key: data-${{ github.run_id }}
-          restore-keys: data-
+          path: odds_cache
+          key: odds-${{ github.run_id }}
+          restore-keys: odds-
 
       - name: Is a deadline coming up?
         id: due
@@ -90,7 +91,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add output
+          git add output understat_cache
           if git diff --cached --quiet; then exit 0; fi
           git commit -m "gw${{ steps.due.outputs.gameweek }} (automatic)"
           git pull --rebase

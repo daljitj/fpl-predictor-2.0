@@ -1,0 +1,108 @@
+# Runs the model before each FPL deadline and sends the suggestions to
+# your phone with ntfy. Checks twice a day; due.py decides whether this
+# is the run that sends (between 3 and 20 hours before the deadline).
+#
+# Setup (once): add a repository secret NTFY_TOPIC (your ntfy topic name)
+# and set Settings > Actions > General > Workflow permissions to
+# "Read and write". Test any time from the Actions tab: "Weekly FPL
+# suggestions" > Run workflow, with "force" ticked.
+
+name: Weekly FPL suggestions
+
+on:
+  schedule:
+    - cron: "0 8 * * *"    # 08:00 UTC (09:00 UK in summer)
+    - cron: "0 17 * * *"   # 17:00 UTC (18:00 UK in summer)
+  workflow_dispatch:
+    inputs:
+      force:
+        description: "Run and send now, whatever the deadline"
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: fpl-weekly
+  cancel-in-progress: false
+
+jobs:
+  suggest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    env:
+      NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        id: python
+        with:
+          python-version: "3.13"
+
+      - name: Install Poetry
+        run: pipx install poetry
+
+      - name: Restore Python environment
+        uses: actions/cache@v4
+        with:
+          path: .venv
+          key: venv-${{ runner.os }}-${{ steps.python.outputs.python-version }}-${{ hashFiles('poetry.lock') }}
+
+      - name: Install dependencies
+        run: poetry install --no-interaction
+
+      # understat_cache/ is committed to the repo (Understat often refuses
+      # automated requests, so GitHub starts from the saved history); new
+      # matches are committed back in the last step. Odds stay in the cache.
+      - name: Restore odds cache
+        uses: actions/cache@v4
+        with:
+          path: odds_cache
+          key: odds-${{ github.run_id }}
+          restore-keys: odds-
+
+      - name: Is a deadline coming up?
+        id: due
+        run: poetry run python due.py ${{ inputs.force && '--force' || '' }}
+
+      - name: Score last gameweek
+        if: steps.due.outputs.due == 'true'
+        continue-on-error: true
+        run: poetry run poe track
+
+      - name: Suggest transfers
+        id: model
+        if: steps.due.outputs.due == 'true'
+        continue-on-error: true
+        run: poetry run poe transfers
+
+      - name: Suggest transfers without Understat (fallback)
+        if: steps.due.outputs.due == 'true' && steps.model.outcome == 'failure'
+        run: poetry run poe quick
+
+      - name: Send to phone
+        if: steps.due.outputs.due == 'true'
+        run: poetry run python notify.py
+
+      - name: Commit outputs
+        if: steps.due.outputs.due == 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add output understat_cache
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m "gw${{ steps.due.outputs.gameweek }} (automatic)"
+          git pull --rebase
+          git push
+
+      - name: Tell phone the run failed
+        if: failure() && env.NTFY_TOPIC != ''
+        run: |
+          curl -s \
+            -H "Title: FPL run failed" \
+            -H "Tags: warning" \
+            -H "Click: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" \
+            -d "The automatic run failed, so no suggestions this time. Tap for the log, or run poetry run poe weekly yourself." \
+            "https://ntfy.sh/$NTFY_TOPIC"

@@ -3,8 +3,9 @@ Is it time to send this gameweek's suggestions?
 
 Used by the GitHub Actions workflow, which checks twice a day. Due when
 the next deadline is between MIN_HOURS and MAX_HOURS away and no plan
-for that gameweek was saved before its deadline (so a manual run, or an
-earlier automatic one, isn't repeated).
+for that gameweek was saved inside that window (so a manual run, or an
+earlier automatic one, close to the deadline isn't repeated; a test run
+days before doesn't count).
 
 Writes due=true/false and gameweek=N to $GITHUB_OUTPUT when run in
 Actions, and always prints the reason.
@@ -15,7 +16,7 @@ poetry run python due.py --force   # due regardless of the window
 import argparse
 import json
 import os
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 import fpl_api
@@ -36,11 +37,15 @@ def next_deadline(events):
 
 
 def already_planned(gw, deadline):
+    """A plan for this gameweek made inside the sending window. Plans made
+    earlier (a test run, or a run days before) don't count, so the
+    pre-deadline run still sends with the latest team news and odds."""
     f = OUTPUT / f"plan_{CURRENT}_gw{gw}.json"
     if not f.exists():
         return False
-    made = json.loads(f.read_text(encoding="utf-8"))["made_at"]
-    return datetime.fromisoformat(made) < deadline
+    made = datetime.fromisoformat(
+        json.loads(f.read_text(encoding="utf-8"))["made_at"])
+    return deadline - timedelta(hours=MAX_HOURS) <= made < deadline
 
 
 def check(force=False):
