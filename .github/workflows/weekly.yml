@@ -19,6 +19,10 @@ on:
         description: "Run and send now, whatever the deadline"
         type: boolean
         default: false
+      free_transfers:
+        description: "Override free transfers (0 to 5); blank uses the estimate"
+        type: string
+        default: ""
 
 permissions:
   contents: write
@@ -33,6 +37,7 @@ jobs:
     timeout-minutes: 120
     env:
       NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
+      FREE_TRANSFERS: ${{ inputs.free_transfers }}
     steps:
       - uses: actions/checkout@v4
 
@@ -76,11 +81,15 @@ jobs:
         id: model
         if: steps.due.outputs.due == 'true'
         continue-on-error: true
-        run: poetry run poe transfers
+        run: |
+          if [[ "$FREE_TRANSFERS" =~ ^[0-5]$ ]]; then ARGS="--free-transfers $FREE_TRANSFERS"; fi
+          poetry run poe transfers $ARGS
 
       - name: Suggest transfers without Understat (fallback)
         if: steps.due.outputs.due == 'true' && steps.model.outcome == 'failure'
-        run: poetry run poe quick
+        run: |
+          if [[ "$FREE_TRANSFERS" =~ ^[0-5]$ ]]; then ARGS="--free-transfers $FREE_TRANSFERS"; fi
+          poetry run poe quick $ARGS
 
       - name: Send to phone
         if: steps.due.outputs.due == 'true'

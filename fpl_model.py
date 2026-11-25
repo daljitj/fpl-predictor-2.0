@@ -471,7 +471,8 @@ def save_plan(result, gw_cols, mode, team=None, options=None):
                             "out": [int(e) for e in team["squad"]
                                     if e not in set(r["squad"]["element"])],
                             "in": [int(e) for e in r["squad"]["element"]
-                                   if e not in team["squad"]]}
+                                   if e not in team["squad"]],
+                            "lineup": optimiser.compact_lineup(None, r)}
                            for r in options]
     f = OUTPUT / f"plan_{CURRENT}_gw{info['gameweek']}.json"
     f.write_text(json.dumps(plan, indent=2), encoding="utf-8")
@@ -541,8 +542,11 @@ def main():
           f"(points after hits; gain is versus making no transfers):")
     for r in options:
         sold, bought = optimiser.describe_transfers(preds, team, r)
+        lu = optimiser.compact_lineup(preds, r)
         print(f"  {r['k']} transfer(s): {r['net']:6.1f} pts  gain {r['gain']:+5.1f}"
-              f"  hits -{r['hits']}\n      out: {sold}\n      in:  {bought}")
+              f"  hits -{r['hits']}\n      out: {sold}\n      in:  {bought}"
+              f"\n      GW{gw_cols[0][2:]} XI: {lu['xi']}"
+              f"\n      bench: {lu['bench']}")
     best = max(options, key=lambda r: r["net"])
     print(f"\nHighest predicted total: {best['k']} transfer(s). "
           f"Line-up for gameweek {gw_cols[0][2:]} under that plan:")

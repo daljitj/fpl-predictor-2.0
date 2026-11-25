@@ -156,6 +156,32 @@ def describe_points(result):
     return pd.DataFrame(rows)
 
 
+def compact_lineup(df, result, gw_index=0):
+    """Short text line-up for one gameweek: XI by position (highest
+    predicted first, captain marked C, vice VC) and the bench in order
+    (goalkeeper first, then outfield by predicted points)."""
+    lu = result["lineups"][gw_index]
+    g = lu["gw"]
+    sq = result["squad"].set_index("element")
+    xi = sq.loc[list(lu["start"])].sort_values(g, ascending=False)
+    vice = next(e for e in xi.index if e != lu["captain"])
+    def tag(e):
+        return {lu["captain"]: " (C)", vice: " (VC)"}.get(e, "")
+    parts = []
+    for p in POS:
+        names = [f"{xi.at[e, 'web_name']}{tag(e)}"
+                 for e in xi.index[xi["position"] == p]]
+        parts.append(", ".join(names))
+    bench = sq.drop(index=list(lu["start"]))
+    bench = pd.concat([bench[bench["position"] == "GK"],
+                       bench[bench["position"] != "GK"].sort_values(g, ascending=False)])
+    return {"xi": " | ".join(parts), "bench": ", ".join(bench["web_name"]),
+            "captain": int(lu["captain"]), "vice": int(vice),
+            "start": sorted(int(e) for e in lu["start"]),
+            "bench_order": [int(e) for e in bench.index],
+            "points": round(float(lu["points"]), 1)}
+
+
 def describe_transfers(df, team, r):
     names = df.set_index("element")
     out = [e for e in team["squad"] if e not in set(r["squad"]["element"])]

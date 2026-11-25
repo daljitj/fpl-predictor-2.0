@@ -124,58 +124,64 @@ def build_message(plan, preds):
     lines.append("")
 
     n_tr = len(plan.get("transfers_in", []))
-    if plan.get("mode") == "transfers":
-        best = next((o for o in plan.get("options", [])
-                     if o["transfers"] == n_tr), None)
-        gain = f", +{best['gain']:.1f} pts over {span}" if best else ""
-        hits = f", hit -{plan['hits']}" if plan.get("hits") else ""
-        if n_tr == 0:
-            lines.append(f"Suggested: no transfers (save the free one){hits}.")
-        else:
-            lines.append(f"Suggested: {n_tr} transfer{'s' if n_tr > 1 else ''}"
-                         f"{gain}{hits}")
-            sell = plan.get("sell_prices", {})
-            # pair each player out with the one coming in for his position
-            pos = lambda e: (POS_ORDER.index(preds.at[e, "position"])
-                             if e in preds.index else 9)
-            for o, i in zip(sorted(plan["transfers_out"], key=pos),
-                            sorted(plan["transfers_in"], key=pos)):
-                out_p = f" ({money(sell[str(o)])})" if str(o) in sell else ""
-                in_p = (f" (£{preds.at[i, 'price']:.1f}m)"
-                        if i in preds.index else "")
-                lines.append(f"  OUT {name(preds, o)}{out_p} > "
-                             f"IN {name(preds, i)}{in_p}")
-        opts = [f"{o['transfers']}: {o['net']:.1f}" +
-                (f" (-{o['hits']})" if o.get("hits") else "")
-                for o in plan.get("options", [])]
-        if opts:
-            lines.append(f"Options (transfers: pts over {span}): "
-                         + ", ".join(opts))
-    else:
+    sell = plan.get("sell_prices", {})
+    pos = lambda e: (POS_ORDER.index(preds.at[e, "position"])
+                     if e in preds.index else 9)
+
+    def swap_lines(outs, ins):
+        """'OUT a (£x) > IN b (£y)', pairing players of the same position."""
+        out = []
+        for o, i in zip(sorted(outs, key=pos), sorted(ins, key=pos)):
+            out_p = f" ({money(sell[str(o)])})" if str(o) in sell else ""
+            in_p = (f" (£{preds.at[i, 'price']:.1f}m)"
+                    if i in preds.index else "")
+            out.append(f"  OUT {name(preds, o)}{out_p} > "
+                       f"IN {name(preds, i)}{in_p}")
+        return out
+
+    options = plan.get("options", [])
+    if plan.get("mode") != "transfers":
         lines.append(f"Best squad from scratch for {span}.")
-    lines.append("")
+    elif options and "lineup" in options[0]:
+        # one block per option, each with its own GW line-up
+        for o in options:
+            k = o["transfers"]
+            mark = "RECOMMENDED: " if k == n_tr else ""
+            hit = f", hit -{o['hits']}" if o.get("hits") else ""
+            what = "no transfers" if k == 0 else (
+                f"{k} transfer{'s' if k > 1 else ''}")
+            lines.append(f"{mark}{what}: {o['net']:.1f} pts over {span} "
+                         f"(gain {o['gain']:+.1f}{hit})")
+            lines += swap_lines(o["out"], o["in"])
+            lo = o["lineup"]
+            lines.append(f"  GW{gw} XI: {lo['xi']}")
+            lines.append(f"  Bench: {lo['bench']}")
+            lines.append("")
+    else:
+        # plans saved before per-option line-ups were added
+        hits = f", hit -{plan['hits']}" if plan.get("hits") else ""
+        lines.append(f"Suggested: {n_tr} transfer(s){hits}")
+        lines += swap_lines(plan.get("transfers_out", []),
+                            plan.get("transfers_in", []))
+        lines.append("Options (transfers: pts over "
+                     f"{span}): " + ", ".join(
+                         f"{o['transfers']}: {o['net']:.1f}" for o in options))
+        lines.append("")
 
     start = [e for e in lu["start"] if e in preds.index]
     cap = lu["captain"]
     vice = max((e for e in start if e != cap),
                key=lambda e: preds.at[e, f"gw{gw}"], default=None)
-    lines.append(f"Captain: {player_line(preds, cap, gw)}")
+    lines.append(f"Captain (recommended XI): {player_line(preds, cap, gw)}")
     if vice is not None:
         lines.append(f"Vice: {player_line(preds, vice, gw)}")
-    lines.append("")
-
-    xi = preds.loc[start]
-    for pos in POS_ORDER:
-        names = xi[xi["position"] == pos].sort_values(
-            f"gw{gw}", ascending=False)["player"].tolist()
-        if names:
-            lines.append(f"{pos}: " + ", ".join(names))
-    bench = preds.loc[[e for e in plan["squad"]
-                       if e not in lu["start"] and e in preds.index]]
-    bench = pd.concat([bench[bench["position"] == "GK"],
-                       bench[bench["position"] != "GK"].sort_values(
-                           f"gw{gw}", ascending=False)])
-    lines.append("Bench: " + ", ".join(bench["player"]))
+    if not (options and "lineup" in options[0]):
+        xi = preds.loc[start]
+        for p_ in POS_ORDER:
+            names = xi[xi["position"] == p_].sort_values(
+                f"gw{gw}", ascending=False)["player"].tolist()
+            if names:
+                lines.append(f"{p_}: " + ", ".join(names))
     lines.append(f"Predicted GW{gw} points: {lu['predicted']:.0f} "
                  "(captain counted twice)")
 

@@ -9,8 +9,11 @@ Two things the public API doesn't show directly, so they're estimated:
   come from your transfer history, or the start-of-season price for
   players you've had since your first gameweek.
 * Free transfers. Rebuilt gameweek by gameweek from your history: one
-  added per gameweek, up to five banked, unused ones carried over, and
-  saved ones kept when a Wildcard or Free Hit is played.
+  added per gameweek, up to five banked, unused ones carried over. In a
+  Wildcard or Free Hit week the saved ones are kept but no new one is
+  added (checked against the FPL app: a GW5 Wildcard, then this rule,
+  gave the 1 free transfer the app showed for GW12; adding one in the
+  chip week gave 2).
 
 Both are printed so you can check them against the FPL app, and both
 can be overridden from the command line.
@@ -37,7 +40,7 @@ def estimate_free_transfers(history):
     ft = 1  # after your first gameweek, whose squad was picked for free
     for w in weeks[1:]:
         if chips.get(w["event"]) in CHIPS_KEEPING_TRANSFERS:
-            ft = min(ft + 1, MAX_FREE_TRANSFERS)   # saved ones kept
+            pass   # saved ones kept, no new one added
         else:
             ft = min(max(ft - w["event_transfers"], 0) + 1, MAX_FREE_TRANSFERS)
     return ft

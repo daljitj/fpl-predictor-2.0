@@ -74,6 +74,7 @@ An automatic run before each deadline (GitHub Actions, see `README.md`) sends th
 - After moving or renaming the folder, delete `.venv` and run `poetry install`; the old environment keeps absolute paths.
 - Club names differ between sources and FPL renames clubs between seasons; matching is by shared match dates per season, never a hand-written table.
 - Test changes end to end in both modes (from scratch and `--team-id`); an indentation slip once broke only transfer mode.
+- Free transfers are estimated by replaying the history (no public endpoint gives them). In a Wildcard or Free Hit week saved transfers are kept but no new one is added; confirmed against Daljit's app in GW12. Override with `--free-transfers` or the workflow's `free_transfers` input.
 - Without network access to FPL, test with `LIVE_CURRENT = False` (uses the archive) and mocked `my_team.load_my_team`.
 
 ## Roadmap (next)
